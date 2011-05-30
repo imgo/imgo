@@ -1,0 +1,747 @@
+#!/bin/bash
+# imgo - продвинутый оптимизатор изображений
+
+# Используемые библиотеки
+# imagemagick   http://www.imagemagick.org/
+# pngout        http://www.advsys.net/ken/util/pngout.htm
+# optipng       http://optipng.sourceforge.net/
+# pngrewrite    http://entropymine.com/jason/pngrewrite/
+# exiftool      http://www.sno.phy.queensu.ca/~phil/exiftool/
+# advpng        http://advancemame.sourceforge.net/comp-readme.html
+# jpegtran      http://www.ijg.org/
+# gifsicle      http://www.lcdf.org/gifsicle/man.html 
+# pngnq         http://pngnq.sourceforge.net/
+# defluff		http://encode.ru/threads/1214-defluff-a-deflate-huffman-optimizer
+
+# версия скрипта
+IMGO_VERSION=0.0.1
+
+# количество пунктов в массиве 
+arrsize=6
+
+#Статистика
+IMGO_TOTAL_ORIG_SIZE=0
+IMGO_TOTAL_SAVE_SIZE=0
+IMGO_TOTAL_COUNTER=0
+IMGO_TOTAL_COUNTER_PROCESS=0
+IMGO_DATE_BEFORE="$(date +%s)"
+IMGO_IE=0
+
+
+# отдаем размер файла
+filesize()
+{
+    filesize=`ls -la "$1" | awk '{print $5}'`
+}
+
+# отдаем тип файла 
+filetype()
+{
+    filetype=`identify -verbose "$1" | sed -n 's/[[:space:]]*Type:[[:space:]]*\(.*\)/\1/p'`
+}
+
+# отдаем формат файла
+fileformat()
+{
+    fileformat=`exiftool "$1" | sed -n 's/File Type[[:space:]]*[[:space:]]: \(.*\)/\1/p'`
+}
+
+# отдает bKGD в формате rgb(r, g, b)
+bkgd()
+{
+	filetype "$1"
+    if [ "${filetype}" = "TrueColorMatte" ]; then
+	    bkgd=`exiftool -BackgroundColor "${1}" | sed -E 's/.*:[[:blank:]]*([[:digit:]]*)[[:blank:]]([[:digit:]]*)[[:blank:]]([[:digit:]]*)/rgb(\1,\2,\3)/'`	
+	else
+		bkgd=""
+	fi
+    imgologger "bKGD: ${1} ->  ${bkgd}";
+}
+
+# устанавливаем bKGD
+setbkgd ()
+{
+	imgologger "setbkgd start"
+	imgologger "bKGD -> ${2}"
+     if [ "${IMGO_EMULATE}" = 0 ]; then
+        tmp=""
+     else
+		filetype ${1}
+		if [ "${filetype}" = "TrueColorMatte" ]; then
+		     convert "${1}" -background "${2}" "${1}"
+		fi
+    fi
+	imgologger "setbkgd end"
+}
+
+# генератор случайной строки
+# используется для генерации временных папок и имен файлов
+random() 
+{
+    RND=$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM
+    imgologger "RANDOM -> $RND";
+}
+
+#diff files
+imgdiff ()
+{
+    FIRST_DIFF=`exiftool -v3 "$1"`
+    SECOND_DIFF=`exiftool -v3 "$2"`
+    echo "diff $1 and $2"
+    diff <(echo "$FIRST_DIFF") <(echo "$SECOND_DIFF")
+    echo "----------"
+}
+
+
+# log
+imgologger ()
+{
+    if [ -n "${IMGO_LOG:+x}" ]; then
+        echo "$1"
+    fi
+}
+
+
+#PNG worker
+pngworker()
+{
+    imgologger "pngworker"
+    imgologger "Start process file: $1"
+    originalpath="$1"
+    filesize "$1"
+    random
+    RNDFOLDER="/tmp/imgopng${RND}/"    
+    mkdir "$RNDFOLDER"
+    imgologger "Tmp dir: $RNDFOLDER"
+    random
+    cp "$1" "${RNDFOLDER}${RND}.png"
+    imgologger "copy the original file: \"$1\" -> \"${RNDFOLDER}${RND}.png\""
+    originalsize="$filesize"
+    imgpngcomp "$1"  "${RNDFOLDER}${RND}.png"
+    if [ -n "${IMGO_MULTIPASS:+x}" ] && [ "$originalsize" -gt "$filesize" ]; then
+        pngworker "$1"
+    fi
+}
+ 
+# ядро PNG оптимизатора
+imgpngcomp()
+{
+    imgologger "imgpngcomp"
+    # удаляем массив
+    unset imgArray
+    # добавляем в массив картинки
+    imgArray[1]="$2"
+    # определяем тип PNG файла
+    filetype "$2"
+    # чистим прозрачные области
+    cleanalpha "$2"
+    # пробуем пережать png8
+    png8rewrite "$2"
+    # пробуем поднять битность
+    upbit "$2"
+    # пробуем конвертировать png8 в png24, для безопасного режима - только без прозрачности
+    png8topng24 "$2"
+    for (( i = 0 ; i < "$arrsize" ; i++ ))
+    do
+        if [ "${imgArray[$i]}" ]; then
+            if [ "${IMGO_IE}" = 0 ]; then  # варант для безопасного режима
+                imgologger "safe mode start"
+                imgologger "${imgArray[$i]}"
+                bkgd "${imgArray[$i]}"
+                pngout -q -s0 -c0 "${imgArray[$i]}" # пробуем конвертнуть в серый
+                imgologger "pngout -q -s0 -c0 ${imgArray[$i]}"
+                getfparam "${imgArray[$i]}" # сжимаем optipng 
+                filetype "${imgArray[$i]}"
+                if [ "${filetype}" = "PaletteMatte" ]; then
+                    tmp=0
+                else
+                    pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
+                fi
+            else # полный вариант, лучшаая степень сжатия
+                pngout -q -s0 -c0 "${imgArray[$i]}" # пробуем конвертнуть в серый
+                pngout -q -s0 -c2 "${imgArray[$i]}" # пробуем конвертнуть в RGB
+                pngout -q -s0 -c3 "${imgArray[$i]}" # пробуем конвертнуть в Pallete
+                pngout -q -s0 -c4 -kbKGD "${imgArray[$i]}" # пробуем конвертнуть в Gray+Alpha
+                pngout -q -s0 -c6 -kbKGD "${imgArray[$i]}" # пробуем конвертнуть в RGB+Alpha
+                bkgd "${imgArray[$i]}"
+                if [ "${bkgd}" = "white" ]; then
+                    pngout -q -b1024 -kbKGD "${imgArray[$i]}"
+                    pngout -q -b4096 -kbKGD "${imgArray[$i]}"
+                    pngout -q -b1024 -kbKGD "${imgArray[$i]}"
+                    pngout -q -b4096 -kbKGD "${imgArray[$i]}"
+                    pngout -q -c3 -d8 -b1024 -kbKGD "${imgArray[$i]}"
+                    pngout -q -c3 -d8 -b4096 -kbKGD "${imgArray[$i]}"
+                fi
+                getfparam "${imgArray[$i]}" # сжимаем optipng       
+                pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
+            fi
+			cat "${imgArray[$i]}" | defluff  > "${imgArray[$i]}.tmp.png" 2>/dev/null
+			mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
+        fi
+    done
+    minsize
+}
+
+# если PNG24/32, то чистим прозрачные области
+cleanalpha ()
+{
+    imgologger "cleanalpha start"
+    if [ "${filetype}" = "TrueColorMatte" ]; then # если файл PNG24/32 c прозрачностью
+        random
+        bkgd "${1}"
+		#convert "${1}" -background Black -alpha Background "${1}${RND}.png"
+        convert "${1}" -channel RGBA -separate ${1}${RND}.png
+        convert "${1}${RND}-3.png" -negate "${1}${RND}-mask.png" # негатив aplha канала
+        convert "${1}${RND}-mask.png" -fuzz 99%  -fill white -opaque white "${1}${RND}-mask.png" # добавляяем в маску всю полупрозрачность
+        # чистим каналы RGB
+        composite -compose bumpmap "${1}${RND}-0.png" "${1}${RND}-mask.png" "${1}${RND}-0.png"
+        composite -compose bumpmap "${1}${RND}-1.png" "${1}${RND}-mask.png" "${1}${RND}-1.png"
+        composite -compose bumpmap "${1}${RND}-2.png" "${1}${RND}-mask.png" "${1}${RND}-2.png"
+        # собираем файл, по необходимости добавляем bKGD
+        if [ "${bkgd}" = "" ]; then
+            imgologger "No BKGD"
+            convert "${1}${RND}-0.png" "${1}${RND}-1.png" "${1}${RND}-2.png" "${1}${RND}-3.png" -channel RGBA -combine "${RNDFOLDER}${RND}.png"
+        else
+            imgologger "BKGD -> ${bkgd}"
+            imgologger "convert ${1}${RND}-0.png ${1}${RND}-1.png ${1}${RND}-2.png  ${1}${RND}-3.png  -channel RGBA -background \"${bkgd}\" -combine ${RNDFOLDER}${RND}.png"
+            convert "${1}${RND}-0.png" "${1}${RND}-1.png" "${1}${RND}-2.png" "${1}${RND}-3.png"  -channel RGBA -background "${bkgd}" -combine "${RNDFOLDER}${RND}.png"
+        fi
+        imgArray[2]="${RNDFOLDER}${RND}.png"
+        # удаляем мусор
+        rm -f "${1}${RND}-0.png" && rm -f "${1}${RND}-1.png" && rm -f "${1}${RND}-2.png" && rm -f "${1}${RND}-3.png" && rm -f "${1}${RND}-mask.png"
+    fi
+    
+    imgologger "cleanalpha -> ${RNDFOLDER}${RND}.png"
+    imgologger "cleanalpha end"
+}
+
+
+# PNG8 в PNG24, если нет прозрачности, безопасно для IE6
+png8topng24()
+{
+    imgologger "png8topng24 start"
+    imgologger "filetype -> $filetype"
+    
+    if [ "${IMGO_IE}" = 0 ]; then
+        tmp=0
+    else
+        if [ "${filetype}" = "Palette" ]; then # небезопасно для ИE, зато есть возможность сильнее пожать
+        #if [ "${filetype}" = "Palette" -o "${filetype}" = "PaletteMatte" ]; then # небезопасно для ИE, зато есть возможность сильнее пожать
+            random
+            convert "$1" PNG24:${RNDFOLDER}${RND}.png
+            imgArray[3]="${RNDFOLDER}${RND}.png"
+        fi
+    fi
+    imgologger "png8topng24 -> ${RNDFOLDER}${RND}.png"
+    imgologger "png8topng24 end"
+}
+
+
+# пережимаем PNG8
+png8rewrite ()
+{
+    imgologger "png8rewrite start"
+    filetype "$1"
+    imgologger "filetype -> ${filetype}"
+    if [ "${IMGO_IE}" = 0 ]; then
+        tmp=0
+        imgologger "IMGO_IE"
+    else
+        if [ "${filetype}" = "Palette" -o "${filetype}" = "PaletteMatte"  ] ; then
+            random
+            if [ -n "${IMGO_LOG:+x}" ]; then
+                pngrewrite "$1" "${RNDFOLDER}${RND}.png"
+            else
+                pngrewrite "$1" "${RNDFOLDER}${RND}.png" &> /dev/null
+            fi
+        
+            imgArray[4]="${RNDFOLDER}${RND}.png"
+        fi
+    fi
+    imgologger "png8rewrite -> ${RNDFOLDER}${RND}.png"
+    imgologger "png8rewrite end"
+}
+
+# повышаем битность, убивает bkgd
+upbit ()
+{
+    imgologger "upbit start"
+    
+    if [ "${filetype}" = "Palette" -o "${filetype}" = "PaletteMatte" ]; then
+        random
+        cp "${1}" "${RNDFOLDER}${RND}.png"
+        if [ -n "${IMGO_LOG:+x}" ]; then
+            advpng -z -4 "${RNDFOLDER}${RND}.png"
+        else
+            advpng -q -z -4 "${RNDFOLDER}${RND}.png"
+        fi
+        imgArray[5]="${RNDFOLDER}${RND}.png"
+    fi
+    imgologger "upbit -> ${RNDFOLDER}${RND}.png"
+    imgologger "upbit end"
+}
+
+
+# сжимаем через optipng и получаем ключ -f для pngout
+getfparam()
+{
+    imgologger "getfparam"
+        
+        if [ "${IMGO_IE}" = 0 ]; then
+             fparam=`optipng -preserve -nb -nc -np -nz -zc1-9 -zm1-9 -zs0-3 -f0-5 -i0 "${1}" | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+        else
+             #fparam=`optipng -preserve -zc1-9 -zm1-9 -zs0-3 -f0-5 -i0 ${1} | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+             fparam=`optipng "${1}" | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+        fi
+       
+
+    if [ "$fparam" = "" ]; then
+        fparam=5
+    fi
+    if [ `echo "$fparam" | grep "^[0-9]*$"` ]
+    then
+        fparam="$fparam"
+    else
+        fparam=5
+    fi
+    imgologger "fparam -> $fparam"
+    imgologger "end getfparam"
+}
+
+# separate, резбивает файл на 2 с прозрачностью и без
+separate()
+{
+    imgologger "start separate"
+    filetype "$1"
+    if [ "${filetype}" = "TrueColorMatte" ]; then # если файл PNG24/32 c прозрачностью
+        imgologger "separateworker start"
+        imgologger "file -> $1"
+        originalpath="$1"
+        random
+        RNDFOLDER="/tmp/imgoseparate${RND}/"    
+        mkdir "$RNDFOLDER"
+        random
+        cp "$1" "${RNDFOLDER}${RND}.png"
+        
+        convert "${RNDFOLDER}${RND}.png" -channel RGBA -separate "${RNDFOLDER}test_png_temp_filename.png" #разбиваем на rgba каналы
+        convert "${RNDFOLDER}test_png_temp_filename-3.png" -fuzz 99%  -fill white -opaque white "${RNDFOLDER}test_png_temp_filename-mask.png" #маска для обрезания картинки, выделены все непрозрачные области
+		convert "${RNDFOLDER}test_png_temp_filename-mask.png" -monochrome "${RNDFOLDER}test_png_temp_filename-mask.png" #конвертирую изображение в Ч\Б, для "наверника"
+		convert "${RNDFOLDER}test_png_temp_filename-0.png" "${RNDFOLDER}test_png_temp_filename-1.png" "${RNDFOLDER}test_png_temp_filename-2.png" "${RNDFOLDER}test_png_temp_filename-mask.png" -channel RGBA -combine "${RNDFOLDER}test_crop.png" #собираем RAW для PNG8, отрывая всю полупрозрачность
+		convert "${RNDFOLDER}test_png_temp_filename-3.png" -fill white -opaque black "${RNDFOLDER}test_png_temp_filename-mask.png" #собираем Альфа маску, содержащую только полупрозрачне области
+		convert "${RNDFOLDER}test_png_temp_filename-0.png" "${RNDFOLDER}test_png_temp_filename-1.png" "${RNDFOLDER}test_png_temp_filename-2.png" "${RNDFOLDER}test_png_temp_filename-mask.png" -channel RGBA -combine "${RNDFOLDER}test_alpha.png" #собираем PNG24 c полупрозрычными областями
+		rm -f "${RNDFOLDER}test_png_temp_filename*" # чистим мусор
+        if [ "${IMGO_EMULATE}" = 0 ]; then
+            tmp=""
+        else
+            cp "${RNDFOLDER}test_crop.png" "${originalpath%.png}_imgcocmp_crop.png"
+	        cp "${RNDFOLDER}test_alpha.png" "${originalpath%.png}_imgcocmp_alpha.png"
+	        pngnq "${originalpath%.png}_imgcocmp_crop.png" # PNG24 -> PNG8
+		fi
+		rm -rf "${RNDFOLDER}" # чистим мусор
+        if [ -n "${IMGO_QUIET:+x}" ]; then
+            tmp=0
+        else   
+            echo "${originalpath}: Saparated: ${originalpath%.png}_imgcocmp_crop.png, ${originalpath%.png}_imgcocmp_crop.png, ${originalpath%.png}_imgcocmp_crop-nq8.png"
+        fi
+        
+    fi 
+    imgologger "end separate"
+}
+
+#remove transparency
+removetransparency ()
+{
+	imgologger "start removetransparency"
+    filetype "$1"
+	if [ "${filetype}" = "TrueColorMatte" ]; then # если файл PNG24/32 c прозрачностью
+		imgologger "file -> $1"
+	    originalpath="$1"
+	    random
+	    RNDFOLDER="/tmp/imgoseparate${RND}/"    
+	    mkdir "$RNDFOLDER"
+	    random
+	    cp "$1" "${RNDFOLDER}${RND}.png"
+	
+		convert "${RNDFOLDER}${RND}.png" -channel RGBA -separate "${RNDFOLDER}test_png_temp_filename.png" #разбиваем на rgba каналы
+		convert "${RNDFOLDER}test_png_temp_filename-0.png" "${RNDFOLDER}test_png_temp_filename-1.png" "${RNDFOLDER}test_png_temp_filename-2.png" -channel RGB -combine "${RNDFOLDER}_remove_transparency.png"
+		rm -f "${RNDFOLDER}test_png_temp_filename*" # чистим мусор
+		if [ "${IMGO_EMULATE}" = 0 ]; then
+            tmp=""
+        else
+            cp "${RNDFOLDER}_remove_transparency.png" "${originalpath%.png}_imgcocmp_rt.png"
+        fi
+		rm -rf "${RNDFOLDER}"
+		if [ -n "${IMGO_QUIET:+x}" ]; then
+			tmp=0
+		else   
+			echo "${originalpath}: Remove Transparency => ${originalpath%.png}_imgcocmp_rt.png"
+		fi
+		
+	fi
+	imgologger "end removetransparency"
+}
+
+#PNG24 -> PNG8+A
+png8a ()
+{
+	imgologger "start png8a"
+    filetype "$1"
+	if [ "${filetype}" = "TrueColorMatte" ]; then # если файл PNG24/32 c прозрачностью
+		imgologger "file -> $1"
+	    originalpath="$1"
+	    random
+	    RNDFOLDER="/tmp/imgoseparate${RND}/"    
+	    mkdir "$RNDFOLDER"
+	    random
+	    cp "$1" "${RNDFOLDER}${RND}.png"
+		pngnq -n 256 "${RNDFOLDER}${RND}.png"
+		if [ "${IMGO_EMULATE}" = 0 ]; then
+            tmp=""
+        else
+            cp "${RNDFOLDER}${RND}-nq8.png" "${originalpath%.png}_png8a.png"
+        fi
+		rm -rf "${RNDFOLDER}"
+		if [ -n "${IMGO_QUIET:+x}" ]; then
+			tmp=0
+		else   
+			echo "${originalpath}: PNG8+Alpha => ${originalpath%.png}_png8a.png"
+		fi
+		
+	fi
+	imgologger "end png8a"
+}
+
+# оставляем файл наименьшего размера
+minsize()
+{
+    imgologger "minsize"
+    pushd "${RNDFOLDER}" > /dev/null
+    SMALLEST=`ls -S | tail -n 1`
+    optimg="${RNDFOLDER}${SMALLEST}"
+    filesize "${optimg}" && newsize="${filesize}"
+    popd > /dev/null
+    IMGO_TOTAL_ORIG_SIZE="$((${IMGO_TOTAL_ORIG_SIZE}+${originalsize}))"
+    IMGO_TOTAL_COUNTER="$((${IMGO_TOTAL_COUNTER}+1))"
+    if [ ${originalsize} -le ${newsize} ]; then
+        if [ -n "${IMGO_QUIET:+x}" ]; then
+            tmp=0
+        else
+            imgologger "File \"${originalpath}\" skip"
+        fi
+    else
+        imgologger "WIN: ${optimg}"
+        
+        if [ "${IMGO_EMULATE}" = 0 ]; then
+            TEMP_FIND_PNG=""
+        else
+            cp -f "${optimg}" "${originalpath}"
+        fi
+        win="$(( ${originalsize} - ${newsize} ))"
+        IMGO_TOTAL_SAVE_SIZE="$((${IMGO_TOTAL_SAVE_SIZE}+${win}))"
+        IMGO_TOTAL_COUNTER_PROCESS="$((${IMGO_TOTAL_COUNTER_PROCESS}+1))"
+        percent="$(($win*100/$originalsize))"
+        if [ -n "${IMGO_QUIET:+x}" ]; then
+            tmp=0
+        else
+        
+            echo "${originalpath}: ${originalsize} => ${newsize}, Saved: ${win} bytes ("$percent"%)"
+            if [ "${IMGO_DIFF}" = 1 ]; then
+                imgdiff "${originalpath}" "${optimg}"
+            fi
+        fi
+    fi
+    
+    if [ -n "${IMGO_LOG:+x}" ]; then
+        tmp=0
+    else
+        rm -rf "${RNDFOLDER}"
+    fi
+    
+}
+
+
+
+
+#JPEG worker
+jpgworker()
+{
+    
+    imgologger "jpgworker start"
+    imgologger "file -> $1"
+    originalpath="$1"
+    random
+    RNDFOLDER="/tmp/imgojpg${RND}/"    
+    mkdir "$RNDFOLDER"
+    random
+    cp "$1" "${RNDFOLDER}${RND}.jpg"
+    filesize "$1"
+    originalsize="$filesize"
+    imgjpgcomp "$1" "${RNDFOLDER}${RND}.jpg"
+    imgologger "jpgworker end"
+}
+
+# ядро JPG оптимизатора
+imgjpgcomp()
+{
+    # добавляем в массив картинки
+    imgArray[1]="$2"
+    
+    random
+    jpegtran -copy none -optimize "${1}" > "${RNDFOLDER}${RND}.jpg"
+    imgArray[2]="${RNDFOLDER}${RND}.jpg"
+    
+    random
+    jpegtran -copy none -optimize -progressive "${1}" > "${RNDFOLDER}${RND}.jpg"
+    imgArray[2]="${RNDFOLDER}${RND}.jpg"
+    
+    minsize
+}
+
+#GIF worker
+gifworker()
+{
+    imgologger "gifworker start"
+    imgologger "file -> $1"
+    originalpath="$1"
+    random
+    RNDFOLDER="/tmp/imgogif${RND}/"    
+    mkdir "$RNDFOLDER"
+    random
+    cp "$1" "${RNDFOLDER}${RND}.gif"
+    filesize "$1"
+    originalsize="$filesize"
+    imggifcomp "$1" "${RNDFOLDER}${RND}.gif"
+    imgologger "gifworker end"
+}
+
+# ядро GIF оптимизатора
+imggifcomp()
+{
+    # добавляем в массив картинки
+    imgArray[1]="$2"
+    
+    random
+    gifsicle -O2 "${1}" > "${RNDFOLDER}${RND}.gif"
+    imgArray[2]="${RNDFOLDER}${RND}.gif"
+    
+    minsize
+}
+
+
+# Command line interface:
+while test -n "$1"
+do
+   case "$1" in
+       -h|-help|--help|-d|-diff|-b|-brute|-rt|-png8a|-sp|-skippng|-sj|-skipjpg|-sg|-skipgif|-op|-onlypng|-oj|-onlyjpg|-og|-onlygif|-e|-emulate|-m|-multipass|-q|-quiet|-V|-v|-log|-version|-s|-separate)
+           IMGO_ARG="$1"
+           shift
+       ;;
+       -bkgd*)
+           IMGO_ARG=`echo $1 | sed 's/\(\-bkgd\).*/\1/'`
+           IMGO_BG=`echo $1 | sed 's/\-bkgd\(.*\)/\1/'`
+           shift
+       ;;
+       --) shift
+           break
+       ;;
+       -*) echo "$0: Error: Unrecognized option: $1" 1>&2
+           exit 1
+       ;;
+       *)
+           break
+       ;;
+   esac
+
+   case "${IMGO_ARG}" in
+       -h|-help|--help)  echo 'Usage: imgo [-params] [FILE]'
+            echo 'Options:'
+            echo '      -h   | --help          displays help'
+            echo '      -b   | -brute          brute mode, best compression, incompatible in IE6'
+            echo '      -sp  | -skippng        skip all PNG files'
+            echo '      -sj  | -skipjpg        skip all JPEG files'
+            echo '      -sg  | -skipgif        skip all GIF files'
+            echo '      -op  | -onlypng        optimize only PNG files'
+            echo '      -oj  | -onlyjpg        optimize only JPEG files'
+            echo '      -og  | -onlygif        optimize only GIF files'
+            echo '      -e   | -emulate        emulation mode - files are not overwritten'
+            echo '      -m   | -multipass      multipass- image is processed several times'
+            echo '      -q   | -quiet          hides the whole bar, be quiet'
+            echo '      -V   | -version        displays version number'
+            echo '      -d   | -diff           displays diff info'
+            echo '      -s   | -separate       PNG divided into 2 files - the first with transparency, the second without'
+            echo '      -bkgd                  set bKGD chunk -bkgd#ff0000, -bkgdred, -bkgdorange'
+            echo '      -rt                    Remove Transparency'
+            echo '      -png8a                 convert PNG24+Alpha to PNG8+palette transparency'
+            echo '      -v   | -log            display log'
+            echo '      --                     end of options: only file names follow'
+            echo '----------'
+            echo 'Examples:'
+            echo '      imgo somefile.png'
+            echo '      imgo somefile.png somefile.jpg somefile.ico somefile.gif'
+            echo '      imgo -ie6 somefile.png'
+            echo '      imgo'
+            echo ' '
+            exit 0
+       ;;
+       -sp|-skippng)    IMGO_PNG=0
+       ;;
+       -sj|-skipjpg)    IMGO_JPG=0
+       ;;
+       -sg|-skipgif)    IMGO_GIF=0
+       ;;
+       -si|-skipico)    IMGO_ICO=0
+       ;;
+       -op|-onlypng)    IMGO_PNG=1
+       ;;
+       -oj|-onlyjpg)    IMGO_JPG=1
+       ;;
+       -og|-onlygif)    IMGO_GIF=1
+       ;;
+       -oi|-onlyico)    IMGO_ICO=1
+       ;;
+       -e|-emulate)     IMGO_EMULATE=0
+       ;;
+       -b|-brute)       IMGO_IE=1
+       ;;
+       -m|-multipass)   IMGO_MULTIPASS=0
+       ;;
+       -s|-separate)    IMGO_SEPARATE=1
+       ;;
+       -d|-diff)        IMGO_DIFF=1
+       ;;
+       -bkgd)           IMGO_BKGD=1;
+       ;;
+       -rt)           	IMGO_RT=1;
+       ;;
+       -png8a)          IMGO_PNG8A=1;
+       ;;
+       -q|-quiet)       IMGO_QUIET=0
+       ;;
+       -v|-log)              IMGO_LOG=1
+       ;;
+       -V|-version)  	echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
+            			echo "Copyright (C) 2011"
+            			exit 0
+       ;;
+    esac
+done
+
+# start script
+imgologger "-----Start: `date`-----" 
+
+
+# обработка файлов\папок 
+if test "$#" = 0
+then
+    
+    
+    if [ "${IMGO_PNG}" = 0 ]; then
+        TEMP_FIND_PNG=""
+    else
+        if [ "${TEMP_FIRST}" = "1" ]; then
+            TEMP_FIND_PNG=" -or -name \"*.png\""
+        else
+            TEMP_FIND_PNG="-name \"*.png\""
+        fi
+        TEMP_FIRST=1
+    fi
+
+    
+    if [ "${IMGO_JPG}" = 0 ]; then
+        TEMP_FIND_JPG=""
+    else
+        if [ "${TEMP_FIRST}" = "1" ]; then
+            TEMP_FIND_JPG=" -or -name \"*.jpg\" -or -name \"*.jpeg\""
+        else
+            TEMP_FIND_JPG="-name \"*.jpg\" -or -name \"*.jpeg\""
+        fi
+        TEMP_FIRST=1
+    fi
+    
+    
+    if [ "${IMGO_GIF}" = 0 ]; then
+        TEMP_FIND_GIF=""
+    else
+        if [ "${TEMP_FIRST}" = "1" ]; then
+            TEMP_FIND_GIF=" -or -name \"*.gif\""
+        else
+            TEMP_FIND_GIF="-name \"*.gif\""
+        fi
+        TEMP_FIRST=1
+    fi
+    
+    FIND_COMMAND="find . ${TEMP_FIND_PNG}${TEMP_FIND_JPG}${TEMP_FIND_GIF} -type f" 
+    
+    if [ "${IMGO_PNG}" = 1 ]; then
+        FIND_COMMAND="find . -name \"*.png\""
+    elif [ "${IMGO_JPG}" = 1 ] ; then
+        FIND_COMMAND="find . -name \"*.jpg\""
+    elif [ "${IMGO_GIF}" = 1 ] ; then
+        FIND_COMMAND="find . -name \"*.gif\""
+    fi
+    
+    FILELIST="$(eval $FIND_COMMAND)"
+    
+else
+    FILELIST="$@"
+fi
+
+for x in $FILELIST
+do
+	imgologger "File: $x"
+    fileformat "$x"
+    if [ "${IMGO_SEPARATE}" = 1 ]; then
+        if [ "$fileformat" = "PNG" ]; then
+           separate "$x" 
+        fi
+	elif [ "${IMGO_RT}" = 1 ]; then
+		if [ "$fileformat" = "PNG" ]; then
+           removetransparency "$x" 
+        fi
+	elif [ "${IMGO_PNG8A}" = 1 ]; then
+		if [ "$fileformat" = "PNG" ]; then
+           png8a "$x" 
+        fi
+    else
+        if [ "$fileformat" = "PNG" ]; then
+            if [ "$IMGO_BKGD" = 1 ]; then
+                setbkgd "$x" "$IMGO_BG"
+			fi
+            pngworker "$x"
+        elif [ "$fileformat" = "JPEG" ]; then
+            jpgworker "$x"
+        elif [ "$fileformat" = "GIF" ]; then
+            gifworker "$x"
+        fi
+    fi
+    
+done
+
+if [ "${IMGO_TOTAL_ORIG_SIZE}" = 0 ]; then
+    imgologger "not found files"
+    IMGO_PERSENT=0
+else
+    IMGO_PERSENT="$(($IMGO_TOTAL_SAVE_SIZE*100/$IMGO_TOTAL_ORIG_SIZE))"
+fi
+
+IMGO_DATE_AFTER="$(date +%s)"
+IMGO_DATE_ELAPSED="$(expr $IMGO_DATE_AFTER - $IMGO_DATE_BEFORE)"
+
+if [ -n "${IMGO_QUIET:+x}" ]; then
+    tmp=0
+else
+    if [ "${IMGO_TOTAL_SAVE_SIZE}" = 0 ]; then
+        tmp=0
+    else
+        echo "---------------------------------------------------------"
+        echo "Result:"
+        echo "  Processed:       ${IMGO_TOTAL_COUNTER_PROCESS} files of ${IMGO_TOTAL_COUNTER}, total size ${IMGO_TOTAL_ORIG_SIZE} bytes"
+        echo "  Profit:          ${IMGO_TOTAL_SAVE_SIZE} bytes ("$IMGO_PERSENT"%)"
+        echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+    fi 
+fi
+
+# end script
+imgologger "------End: `date`------"
+
+exit 0
