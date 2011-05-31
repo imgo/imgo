@@ -12,12 +12,13 @@
 # gifsicle      http://www.lcdf.org/gifsicle/man.html 
 # pngnq         http://pngnq.sourceforge.net/
 # defluff		http://encode.ru/threads/1214-defluff-a-deflate-huffman-optimizer
+# cryopng		http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.1
+IMGO_VERSION=0.0.2
 
 # количество пунктов в массиве 
-arrsize=6
+arrsize=8
 
 #Статистика
 IMGO_TOTAL_ORIG_SIZE=0
@@ -189,26 +190,48 @@ cleanalpha ()
     if [ "${filetype}" = "TrueColorMatte" ]; then # если файл PNG24/32 c прозрачностью
         random
         bkgd "${1}"
-		#convert "${1}" -background Black -alpha Background "${1}${RND}.png"
-        convert "${1}" -channel RGBA -separate ${1}${RND}.png
-        convert "${1}${RND}-3.png" -negate "${1}${RND}-mask.png" # негатив aplha канала
-        convert "${1}${RND}-mask.png" -fuzz 99%  -fill white -opaque white "${1}${RND}-mask.png" # добавляяем в маску всю полупрозрачность
-        # чистим каналы RGB
-        composite -compose bumpmap "${1}${RND}-0.png" "${1}${RND}-mask.png" "${1}${RND}-0.png"
-        composite -compose bumpmap "${1}${RND}-1.png" "${1}${RND}-mask.png" "${1}${RND}-1.png"
-        composite -compose bumpmap "${1}${RND}-2.png" "${1}${RND}-mask.png" "${1}${RND}-2.png"
-        # собираем файл, по необходимости добавляем bKGD
-        if [ "${bkgd}" = "" ]; then
-            imgologger "No BKGD"
-            convert "${1}${RND}-0.png" "${1}${RND}-1.png" "${1}${RND}-2.png" "${1}${RND}-3.png" -channel RGBA -combine "${RNDFOLDER}${RND}.png"
-        else
-            imgologger "BKGD -> ${bkgd}"
-            imgologger "convert ${1}${RND}-0.png ${1}${RND}-1.png ${1}${RND}-2.png  ${1}${RND}-3.png  -channel RGBA -background \"${bkgd}\" -combine ${RNDFOLDER}${RND}.png"
-            convert "${1}${RND}-0.png" "${1}${RND}-1.png" "${1}${RND}-2.png" "${1}${RND}-3.png"  -channel RGBA -background "${bkgd}" -combine "${RNDFOLDER}${RND}.png"
+		
+		if [ "${IMGO_IE}" = 0 ]; then
+			cryopng -q -preserve -nb -np -nz -zc1-9 -zm1-9 -zs0-3 -f0 -i0 "${1}" -out "${RNDFOLDER}${RND}.png"
+			imgArray[2]="${RNDFOLDER}${RND}.png"
+			
+			cryopng -q -preserve -nb -np -nz -zc1-9 -zm1-9 -zs0-3 -f1 -i0 "${1}" -out "${RNDFOLDER}${RND}.6.png" 
+			imgArray[6]="${RNDFOLDER}${RND}.6.png"
+			
+			cryopng -q -preserve -nb -np -nz -zc1-9 -zm1-9 -zs0-3 -f4 -i0 "${1}" -out "${RNDFOLDER}${RND}.7.png"
+			imgArray[7]="${RNDFOLDER}${RND}.7.png"
+
+		else 
+			convert "${1}" -background Black -alpha Background "${1}${RND}.png"
+			convert "${1}" -channel RGBA -separate ${1}${RND}.png
+			convert "${1}${RND}-3.png" -negate "${1}${RND}-mask.png" # негатив aplha канала
+			convert "${1}${RND}-mask.png" -fuzz 99%  -fill white -opaque white "${1}${RND}-mask.png" # добавляяем в маску всю полупрозрачность
+			# чистим каналы RGB
+			composite -compose bumpmap "${1}${RND}-0.png" "${1}${RND}-mask.png" "${1}${RND}-0.png"
+			composite -compose bumpmap "${1}${RND}-1.png" "${1}${RND}-mask.png" "${1}${RND}-1.png"
+			composite -compose bumpmap "${1}${RND}-2.png" "${1}${RND}-mask.png" "${1}${RND}-2.png"
+			# собираем файл, по необходимости добавляем bKGD
+			if [ "${bkgd}" = "" ]; then
+				imgologger "No BKGD"
+				convert "${1}${RND}-0.png" "${1}${RND}-1.png" "${1}${RND}-2.png" "${1}${RND}-3.png" -channel RGBA -combine "${RNDFOLDER}${RND}.png"
+			else
+				imgologger "BKGD -> ${bkgd}"
+				imgologger "convert ${1}${RND}-0.png ${1}${RND}-1.png ${1}${RND}-2.png  ${1}${RND}-3.png  -channel RGBA -background \"${bkgd}\" -combine ${RNDFOLDER}${RND}.png"
+				convert "${1}" -background "${bkgd}" "${RNDFOLDER}${RND}.png"
+			fi
+			
+			# удаляем мусор
+			rm -f "${1}${RND}-0.png" && rm -f "${1}${RND}-1.png" && rm -f "${1}${RND}-2.png" && rm -f "${1}${RND}-3.png" && rm -f "${1}${RND}-mask.png"
+			cryopng -q -f0 "${RNDFOLDER}${RND}.png"
+			imgArray[2]="${RNDFOLDER}${RND}.png"
+			
+			cryopng -q -f1 "${1}" -out "${RNDFOLDER}${RND}.6.png" 
+			imgArray[6]="${RNDFOLDER}${RND}.6.png"
+			
+			cryopng -q -f4 "${1}" -out "${RNDFOLDER}${RND}.7.png"
+			imgArray[7]="${RNDFOLDER}${RND}.7.png"
         fi
-        imgArray[2]="${RNDFOLDER}${RND}.png"
-        # удаляем мусор
-        rm -f "${1}${RND}-0.png" && rm -f "${1}${RND}-1.png" && rm -f "${1}${RND}-2.png" && rm -f "${1}${RND}-3.png" && rm -f "${1}${RND}-mask.png"
+
     fi
     
     imgologger "cleanalpha -> ${RNDFOLDER}${RND}.png"
