@@ -15,7 +15,7 @@
 # cryopng		http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.2
+IMGO_VERSION=0.0.3
 
 # количество пунктов в массиве 
 arrsize=8
