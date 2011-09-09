@@ -15,7 +15,7 @@
 # cryopng		http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.5
+IMGO_VERSION=0.0.6
 
 # количество пунктов в массиве 
 arrsize=6
@@ -647,53 +647,10 @@ imgologger "-----Start: `date`-----"
 if test "$#" = 0
 then
     
-    
-    if [ "${IMGO_PNG}" = 0 ]; then
-        TEMP_FIND_PNG=""
-    else
-        if [ "${TEMP_FIRST}" = "1" ]; then
-            TEMP_FIND_PNG=" -or -name \"*.png\""
-        else
-            TEMP_FIND_PNG="-name \"*.png\""
-        fi
-        TEMP_FIRST=1
-    fi
-
-    
-    if [ "${IMGO_JPG}" = 0 ]; then
-        TEMP_FIND_JPG=""
-    else
-        if [ "${TEMP_FIRST}" = "1" ]; then
-            TEMP_FIND_JPG=" -or -name \"*.jpg\" -or -name \"*.jpeg\""
-        else
-            TEMP_FIND_JPG="-name \"*.jpg\" -or -name \"*.jpeg\""
-        fi
-        TEMP_FIRST=1
-    fi
-    
-    
-    if [ "${IMGO_GIF}" = 0 ]; then
-        TEMP_FIND_GIF=""
-    else
-        if [ "${TEMP_FIRST}" = "1" ]; then
-            TEMP_FIND_GIF=" -or -name \"*.gif\""
-        else
-            TEMP_FIND_GIF="-name \"*.gif\""
-        fi
-        TEMP_FIRST=1
-    fi
-    
-    FIND_COMMAND="find . ${TEMP_FIND_PNG}${TEMP_FIND_JPG}${TEMP_FIND_GIF} -type f" 
-    
-    if [ "${IMGO_PNG}" = 1 ]; then
-        FIND_COMMAND="find . -name \"*.png\""
-    elif [ "${IMGO_JPG}" = 1 ] ; then
-        FIND_COMMAND="find . -name \"*.jpg\""
-    elif [ "${IMGO_GIF}" = 1 ] ; then
-        FIND_COMMAND="find . -name \"*.gif\""
-    fi
-    
-    FILELIST="$(eval $FIND_COMMAND)"
+    imgologger "empty arguments"
+    echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
+    echo "imgo -help            show the extended help"
+    exit 0
     
 else
     FILELIST="$@"
