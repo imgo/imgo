@@ -15,7 +15,7 @@
 # cryopng       http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.6
+IMGO_VERSION=0.0.7
 
 # количество пунктов в массиве 
 arrsize=6
@@ -27,6 +27,12 @@ IMGO_TOTAL_COUNTER=0
 IMGO_TOTAL_COUNTER_PROCESS=0
 IMGO_DATE_BEFORE="$(date +%s)"
 IMGO_IE=0
+
+#переменная, отвечающая за преобразование определенных типов файлов
+IMGO_COMPRESS=1
+
+#переменная, отвечающая за преобразование определенных типов файлов
+IMGO_IMG_CUSTOM=0
 
 
 # отдаем размер файла
@@ -545,7 +551,7 @@ imggifcomp()
 while test -n "$1"
 do
    case "$1" in
-       -h|-help|--help|-d|-diff|-b|-brute|-rt|-png8a|-sp|-skippng|-sj|-skipjpg|-sg|-skipgif|-op|-onlypng|-oj|-onlyjpg|-og|-onlygif|-e|-emulate|-m|-multipass|-q|-quiet|-V|-v|-log|-version|-s|-separate)
+       -h|-help|--help|-d|-diff|-b|-brute|-rt|-png8a|-a|-png|-jpg|-gif|-ico|-e|-emulate|-m|-multipass|-q|-quiet|-V|-v|-log|-version|-s|-separate)
            IMGO_ARG="$1"
            shift
        ;;
@@ -570,12 +576,11 @@ do
             echo 'Options:'
             echo '      -h   | --help          displays help'
             echo '      -b   | -brute          brute mode, best compression, incompatible in IE6'
-            echo '      -sp  | -skippng        skip all PNG files'
-            echo '      -sj  | -skipjpg        skip all JPEG files'
-            echo '      -sg  | -skipgif        skip all GIF files'
-            echo '      -op  | -onlypng        optimize only PNG files'
-            echo '      -oj  | -onlyjpg        optimize only JPEG files'
-            echo '      -og  | -onlygif        optimize only GIF files'
+            echo '      -png                   optimize only PNG files'
+            echo '      -jpg                   optimize only JPEG files'
+            echo '      -gif                   optimize only GIF files'
+            echo '      -ico                   optimize only ICO files'
+            echo '      -a                     abbreviated information'
             echo '      -e   | -emulate        emulation mode - files are not overwritten'
             echo '      -m   | -multipass      multipass- image is processed several times'
             echo '      -q   | -quiet          hides the whole bar, be quiet'
@@ -590,27 +595,23 @@ do
             echo '----------'
             echo 'Examples:'
             echo '      imgo somefile.png'
-            echo '      imgo somefile.png somefile.jpg somefile.ico somefile.gif'
+            echo '      imgo somedir'
             echo '      imgo -ie6 somefile.png'
-            echo '      imgo'
+            echo '      imgo .'
             echo ' '
             exit 0
        ;;
-       -sp|-skippng)    IMGO_PNG=0
+       -png)            IMGO_PNG=2
+                        IMGO_IMG_CUSTOM=1
        ;;
-       -sj|-skipjpg)    IMGO_JPG=0
+       -jpg)            IMGO_JPG=2
+                        IMGO_IMG_CUSTOM=1
        ;;
-       -sg|-skipgif)    IMGO_GIF=0
+       -gif)            IMGO_GIF=2
+                        IMGO_IMG_CUSTOM=1
        ;;
-       -si|-skipico)    IMGO_ICO=0
-       ;;
-       -op|-onlypng)    IMGO_PNG=1
-       ;;
-       -oj|-onlyjpg)    IMGO_JPG=1
-       ;;
-       -og|-onlygif)    IMGO_GIF=1
-       ;;
-       -oi|-onlyico)    IMGO_ICO=1
+       -ico)            IMGO_ICO=2
+                        IMGO_IMG_CUSTOM=1
        ;;
        -e|-emulate)     IMGO_EMULATE=0
        ;;
@@ -622,15 +623,17 @@ do
        ;;
        -d|-diff)        IMGO_DIFF=1
        ;;
-       -bkgd)           IMGO_BKGD=1;
+       -bkgd)           IMGO_BKGD=1
        ;;
-       -rt)           	IMGO_RT=1;
+       -a)              IMGO_SMALL=1
        ;;
-       -png8a)          IMGO_PNG8A=1;
+       -rt)           	IMGO_RT=1
+       ;;
+       -png8a)          IMGO_PNG8A=1
        ;;
        -q|-quiet)       IMGO_QUIET=0
        ;;
-       -v|-log)              IMGO_LOG=1
+       -v|-log)         IMGO_LOG=1
        ;;
        -V|-version)     echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
                         echo "Copyright (C) 2011"
@@ -642,8 +645,75 @@ done
 # start script
 imgologger "-----Start: `date`-----" 
 
+#определяем надо ли сжимать файл, если есть парамерты -png|-ico|-gif|-jpg
+imgdetectcompres()
+{
+    if [ "$IMGO_IMG_CUSTOM" = "1" ]; then
+        
+        if [ "$IMGO_PNG" = "2" -a "$1" = "PNG" ]; then
+            IMGO_COMPRESS=1
+        elif [ "$IMGO_JPG" = "2" -a "$1" = "JPG" ]; then
+            IMGO_COMPRESS=1
+        elif [ "$IMGO_GIF" = "2" -a "$1" = "GIF" ]; then
+            IMGO_COMPRESS=1
+        elif [ "$IMGO_ICO" = "2" -a "$1" = "ICO" ]; then
+            IMGO_COMPRESS=1
+        else
+            IMGO_COMPRESS=0
+        fi
 
-# обработка файлов\папок 
+    else
+        IMGO_COMPRESS=1
+    fi   
+}
+
+
+#обработчик картинок
+imgocore ()
+{
+    FILST=$@
+    for x in $FILST
+    do
+        
+        fileformat "$x"
+
+        imgdetectcompres "$fileformat"
+
+        if [ "$IMGO_COMPRESS" = "1" ]; then
+
+            if [ "${IMGO_SEPARATE}" = 1 ]; then
+                if [ "$fileformat" = "PNG" ]; then
+                   separate "$x" 
+                fi
+            elif [ "${IMGO_RT}" = 1 ]; then
+               if [ "$fileformat" = "PNG" ]; then
+                   removetransparency "$x" 
+                fi
+            elif [ "${IMGO_PNG8A}" = 1 ]; then
+               if [ "$fileformat" = "PNG" ]; then
+                   png8a "$x" 
+                fi
+            else
+                if [ "$fileformat" = "PNG" ]; then
+                    if [ "$IMGO_BKGD" = 1 ]; then
+                        setbkgd "$x" "$IMGO_BG"
+                   fi
+                    pngworker "$x"
+                elif [ "$fileformat" = "JPEG" ]; then
+                    jpgworker "$x"
+                elif [ "$fileformat" = "GIF" ]; then
+                    gifworker "$x"
+                fi
+            fi
+
+        fi
+        
+    done
+    
+}
+
+
+# обработка файлов\папок, извлечение списка файлов в директориях 
 if test "$#" = 0
 then
     
@@ -653,39 +723,28 @@ then
     exit 0
     
 else
+
     FILELIST="$@"
 fi
 
 for x in $FILELIST
 do
-    imgologger "File: $x"
-    fileformat "$x"
-    if [ "${IMGO_SEPARATE}" = 1 ]; then
-        if [ "$fileformat" = "PNG" ]; then
-           separate "$x" 
-        fi
-    elif [ "${IMGO_RT}" = 1 ]; then
-       if [ "$fileformat" = "PNG" ]; then
-           removetransparency "$x" 
-        fi
-    elif [ "${IMGO_PNG8A}" = 1 ]; then
-       if [ "$fileformat" = "PNG" ]; then
-           png8a "$x" 
-        fi
+    if [ -d "$x" ] 
+    then
+        imgologger "Dir: $x"
+        
+        FIND_COMMAND="find $x -name '*.png' -or  -name '*.gif' -or -name '*.jpg' -or  -name '*.jpeg' -or  -name '*.ico' -type f"
+        FIND_COMMANDS="$(eval $FIND_COMMAND)"
+        imgocore "$FIND_COMMANDS" 
+
     else
-        if [ "$fileformat" = "PNG" ]; then
-            if [ "$IMGO_BKGD" = 1 ]; then
-                setbkgd "$x" "$IMGO_BG"
-           fi
-            pngworker "$x"
-        elif [ "$fileformat" = "JPEG" ]; then
-            jpgworker "$x"
-        elif [ "$fileformat" = "GIF" ]; then
-            gifworker "$x"
-        fi
+        imgologger "File: $x"
+        imgocore "$x"
     fi
-    
 done
+
+imgologger "FILELISTS: $FILELISTS"
+
 
 if [ "${IMGO_TOTAL_ORIG_SIZE}" = 0 ]; then
     imgologger "not found files"
@@ -703,11 +762,13 @@ else
     if [ "${IMGO_TOTAL_SAVE_SIZE}" = 0 ]; then
         tmp=0
     else
-        echo "---------------------------------------------------------"
-        echo "Result:"
-        echo "  Processed:       ${IMGO_TOTAL_COUNTER_PROCESS} files of ${IMGO_TOTAL_COUNTER}, total size ${IMGO_TOTAL_ORIG_SIZE} bytes"
-        echo "  Profit:          ${IMGO_TOTAL_SAVE_SIZE} bytes ("$IMGO_PERSENT"%)"
-        echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+        if  [ "$IMGO_SMALL" != "1" ]; then 
+            echo "---------------------------------------------------------"
+            echo "Result:"
+            echo "  Processed:       ${IMGO_TOTAL_COUNTER_PROCESS} files of ${IMGO_TOTAL_COUNTER}, total size ${IMGO_TOTAL_ORIG_SIZE} bytes"
+            echo "  Profit:          ${IMGO_TOTAL_SAVE_SIZE} bytes ("$IMGO_PERSENT"%)"
+            echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+        fi
     fi 
 fi
 
