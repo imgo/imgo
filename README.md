@@ -86,9 +86,13 @@ Advanced images optimizer
 ---------------------------
 * [Устанавливаем](https://github.com/mxcl/homebrew/wiki/Installation "Устанавливаем") homebrew, если уже установлен - переходим дальше
 * Выполняем следующие команды в терминале:
+
 ```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/pngout.rb```
+
 ```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/defluff.rb```
+
 ```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/cryopng.rb```
+
 ```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/imgo.rb```
 
 
