@@ -15,7 +15,7 @@
 # cryopng       http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.8
+IMGO_VERSION=0.0.9
 
 # количество пунктов в массиве 
 arrsize=6
@@ -352,15 +352,15 @@ separate()
         if [ "${IMGO_EMULATE}" = 0 ]; then
             tmp=""
         else
-            cp "${RNDFOLDER}test_crop.png" "${originalpath%.png}_imgcocmp_crop.png"
-            cp "${RNDFOLDER}test_alpha.png" "${originalpath%.png}_imgcocmp_alpha.png"
-            pngnq "${originalpath%.png}_imgcocmp_crop.png" # PNG24 -> PNG8
+            cp "${RNDFOLDER}test_crop.png" "${originalpath%.png}_imgo_crop.png"
+            cp "${RNDFOLDER}test_alpha.png" "${originalpath%.png}_imgo_alpha.png"
+            pngnq "${originalpath%.png}_imgo_crop.png" # PNG24 -> PNG8
         fi
         rm -rf "${RNDFOLDER}" # чистим мусор
         if [ -n "${IMGO_QUIET:+x}" ]; then
             tmp=0
         else   
-            echo "${originalpath}: Saparated: ${originalpath%.png}_imgcocmp_crop.png, ${originalpath%.png}_imgcocmp_crop.png, ${originalpath%.png}_imgcocmp_crop-nq8.png"
+            echo "${originalpath}: Saparated: ${originalpath%.png}_imgo_crop.png, ${originalpath%.png}_imgo_crop.png, ${originalpath%.png}_imgo_crop-nq8.png"
         fi
         
     fi 
@@ -387,13 +387,13 @@ removetransparency ()
         if [ "${IMGO_EMULATE}" = 0 ]; then
             tmp=""
         else
-            cp "${RNDFOLDER}_remove_transparency.png" "${originalpath%.png}_imgcocmp_rt.png"
+            cp "${RNDFOLDER}_remove_transparency.png" "${originalpath%.png}_imgo_rt.png"
         fi
         rm -rf "${RNDFOLDER}"
         if [ -n "${IMGO_QUIET:+x}" ]; then
             tmp=0
         else
-            echo "${originalpath}: Remove Transparency => ${originalpath%.png}_imgcocmp_rt.png"
+            echo "${originalpath}: Remove Transparency => ${originalpath%.png}_imgo_rt.png"
         fi
 
     fi
@@ -772,7 +772,11 @@ if [ -n "${IMGO_QUIET:+x}" ]; then
     tmp=0
 else
     if [ "${IMGO_TOTAL_SAVE_SIZE}" = 0 ]; then
-        tmp=0
+        if  [ "$IMGO_SMALL" != "1" ]; then 
+            echo "Result:"
+            echo "  Processed:       Сould not compress any of the ${IMGO_TOTAL_COUNTER} files"
+            echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+        fi
     else
         if  [ "$IMGO_SMALL" != "1" ]; then 
             echo "---------------------------------------------------------"
