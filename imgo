@@ -642,7 +642,7 @@ do
        -v|--log)        IMGO_LOG=1
        ;;
        -V|--version)    echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
-                        echo "Copyright (C) 2011"
+                        echo "Copyright (C) 2011-2012"
                         exit 0
        ;;
     esac
