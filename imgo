@@ -15,7 +15,7 @@
 # cryopng       http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.0.9
+IMGO_VERSION=0.1
 
 # количество пунктов в массиве 
 arrsize=6
@@ -551,7 +551,7 @@ imggifcomp()
 while test -n "$1"
 do
    case "$1" in
-       -h|-help|--help|-d|-diff|-b|-brute|-rt|-nr|-png8a|-a|-png|-jpg|-gif|-ico|-e|-emulate|-m|-multipass|-q|-quiet|-V|-v|-log|-version|-s|-separate)
+       -h|--help|-d|--diff|-b|--brute|-rt|-nr|-png8a|-a|-png|-jpg|-gif|-ico|-e|--emulate|-m|--multipass|-q|--quiet|-V|-v|--log|--version|-s|--separate)
            IMGO_ARG="$1"
            shift
        ;;
@@ -578,23 +578,23 @@ do
 			echo 'Usage: imgo [-params] [FILE]'
             echo 'Options:'
             echo '      -h   | --help          displays help'
-            echo '      -b   | -brute          brute mode, best compression, incompatible in IE6'
+            echo '      -b   | --brute         brute mode, best compression, incompatible in IE6'
             echo '      -png                   optimize only PNG files'
             echo '      -jpg                   optimize only JPEG files'
             echo '      -gif                   optimize only GIF files'
             echo '      -ico                   optimize only ICO files'
             echo '      -a                     abbreviated information'
-            echo '      -e   | -emulate        emulation mode - files are not overwritten'
-            echo '      -m   | -multipass      multipass- image is processed several times'
-            echo '      -q   | -quiet          hides the whole bar, be quiet'
-            echo '      -V   | -version        displays version number'
-            echo '      -d   | -diff           displays diff info'
-            echo '      -s   | -separate       PNG divided into 2 files - the first with transparency, the second without'
+            echo '      -e   | --emulate       emulation mode - files are not overwritten'
+            echo '      -m   | --multipass     multipass- image is processed several times'
+            echo '      -q   | --quiet         hides the whole bar, be quiet'
+            echo '      -V   | --version       displays version number'
+            echo '      -d   | --diff          displays diff info'
+            echo '      -s   | --separate      PNG divided into 2 files - the first with transparency, the second without'
             echo '      -bkgd                  set bKGD chunk -bkgd#ff0000, -bkgdred, -bkgdorange'
             echo '      -rt                    Remove Transparency'
             echo '      -nr                    Disable recursive search in subdirectories'
             echo '      -png8a                 convert PNG24+Alpha to PNG8+palette transparency'
-            echo '      -v   | -log            display log'
+            echo '      -v   | --log           display log'
             echo '      --                     end of options: only file names follow'
             echo '----------'
             echo 'Examples:'
@@ -617,15 +617,15 @@ do
        -ico)            IMGO_ICO=2
                         IMGO_IMG_CUSTOM=1
        ;;
-       -e|-emulate)     IMGO_EMULATE=0
+       -e|--emulate)    IMGO_EMULATE=0
        ;;
-       -b|-brute)       IMGO_IE=1
+       -b|--brute)      IMGO_IE=1
        ;;
-       -m|-multipass)   IMGO_MULTIPASS=0
+       -m|--multipass)  IMGO_MULTIPASS=0
        ;;
-       -s|-separate)    IMGO_SEPARATE=1
+       -s|--separate)   IMGO_SEPARATE=1
        ;;
-       -d|-diff)        IMGO_DIFF=1
+       -d|--diff)       IMGO_DIFF=1
        ;;
        -bkgd)           IMGO_BKGD=1
        ;;
@@ -637,11 +637,11 @@ do
        ;;
        -png8a)          IMGO_PNG8A=1
        ;;
-       -q|-quiet)       IMGO_QUIET=0
+       -q|--quiet)      IMGO_QUIET=0
        ;;
-       -v|-log)         IMGO_LOG=1
+       -v|--log)        IMGO_LOG=1
        ;;
-       -V|-version)     echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
+       -V|--version)    echo "imgo ${IMGO_VERSION}: Advanced images optimizer"
                         echo "Copyright (C) 2011"
                         exit 0
        ;;
@@ -728,7 +728,7 @@ then
 	echo "Usage: imgo [-params] [FILE]"
 	echo "Example: imgo .              optimize all image files starting from current directory"
 	echo "Example: imgo -png -m .      optimize all png images starting from current directory, using multipass mode"
-    echo "imgo -help                   show the extended help"
+    echo "imgo --help                  show the extended help"
     exit 0
     
 else
