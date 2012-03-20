@@ -15,7 +15,7 @@
 # cryopng       http://frdx.free.fr/cryopng/
 
 # версия скрипта
-IMGO_VERSION=0.1
+IMGO_VERSION=0.2
 
 # количество пунктов в массиве 
 arrsize=6
@@ -307,11 +307,14 @@ getfparam()
     imgologger "getfparam"
         
         if [ "${IMGO_IE}" = 0 ]; then
-             fparam=`optipng -preserve -nb -nc -np -nz -zc1-9 -zm1-9 -zs0-3 -f0-5 -i0 "${1}" | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+            optipng -preserve -nb -nc -np -nz -zc1-9 -zm1-9 -zs0-3 -f0-5 -i0 "${1}" &> ${RNDFOLDER}imgogetfparam${RND}.txt
         else
-             #fparam=`optipng -preserve -zc1-9 -zm1-9 -zs0-3 -f0-5 -i0 ${1} | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
-             fparam=`optipng "${1}" | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+            optipng "${1}" &> ${RNDFOLDER}imgogetfparam${RND}.txt
         fi
+        
+        fparam=`cat ${RNDFOLDER}imgogetfparam${RND}.txt | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+
+        rm ${RNDFOLDER}imgogetfparam${RND}.txt
        
 
     if [ "$fparam" = "" ]; then
