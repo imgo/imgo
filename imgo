@@ -16,7 +16,7 @@
 # pngcrush      http://pmt.sourceforge.net/pngcrush/
 
 # версия скрипта
-IMGO_VERSION=0.3
+IMGO_VERSION=0.4
 
 # количество пунктов в массиве 
 arrsize=6
@@ -76,10 +76,10 @@ setbkgd ()
      else
         filetype ${1}
         if [ "${filetype}" = "TrueColorMatte" -o "${filetype}" = "PaletteMatte" ]; then
-            BKGD_=${2}
-            BKGD_R=`echo "ibase=16; ${BKGD_:0:2}"|bc`
-            BKGD_G=`echo "ibase=16; ${BKGD_:2:2}"|bc`
-            BKGD_B=`echo "ibase=16; ${BKGD_:4:2}"|bc`
+            BKGD_HEX=`echo ${2}|tr '[:lower:]' '[:upper:]'`
+            BKGD_R=`echo "ibase=16; ${BKGD_HEX:0:2}"|bc`;
+            BKGD_G=`echo "ibase=16; ${BKGD_HEX:2:2}"|bc`;
+            BKGD_B=`echo "ibase=16; ${BKGD_HEX:4:2}"|bc`;
             pngcrush -force -q -bkgd ${BKGD_R} ${BKGD_G} ${BKGD_B} "${1}" "${1}".pngcrush
             mv "${1}".pngcrush "${1}"
         fi
