@@ -13,6 +13,7 @@
 # pngnq         http://pngnq.sourceforge.net/
 # defluff       http://encode.ru/threads/1214-defluff-a-deflate-huffman-optimizer
 # cryopng       http://frdx.free.fr/cryopng/
+# pngcrush      http://pmt.sourceforge.net/pngcrush/
 
 # версия скрипта
 IMGO_VERSION=0.3
