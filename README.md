@@ -40,7 +40,7 @@ Advanced images optimizer
 Плюшки
 ---------------------------
 * "imgo -s", "imgo --separate" данная команда отрабатывает на файлах PNG24+Alpha, она создает дополнительно 3 файла. Первый - содержит все непрозрачные области (filename_imgcocmp_corp.png), второй- содержит все полупрозрачные области (filename_imgcocmp_alpha.png), третий- это конвертация первого файла в PNG8, с потерей качества!!! (filename_imgcocmp_corp-nq8.png). Полученные файлы можно обработать "imgo" для получения большей степени сжатия. Как применять эти файлы можно посмотреть по адресу: http://www.artlebedev.ru/tools/technogrette/img/png-2/ 
-* "imgo -bkgd#ff0000", "imgo -bkgdred" устанавливает bKGD, после чего сжимает файл, как использовать bKGD можно узнать http://banzalik.ru/png24-ie6-bg/   
+* "imgo -bkgd#ffffff" устанавливает bKGD, после чего сжимает файл, как использовать bKGD можно узнать http://banzalik.ru/png24-ie6-bg/   
 * "imgo -rt" создает рядом с PNG24+Alpha файл filename_imgcocmp_rt.png, c удаленной Alpha (показывает все содержимое, скрытое за прозрачностью)
 * "imgo -png8a"  конвертирует PNG24+Alpha в PNG8+Alpha (возможны потери в качестве), более подробно - зачем это надо, http://cssing.org.ua/2008/11/07/png-8-alpha/
 
