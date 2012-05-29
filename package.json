@@ -1,0 +1,54 @@
+{
+  "name": "imgo",
+  "description": "Images Optimizer",
+  "version": "2.0.0",
+  "homepage": "http://github.com/imgo/imgo",
+  "author": "Alexander Boychenko <banzalik@gmail.com> (http://github.com/banzalik)",
+  "maintainers": [
+    "Alexander Boychenko <banzalik@gmail.com> (http://github.com/banzalik)"
+  ],
+  "contributors": [
+      "Alexander Boychenko <banzalik@gmail.com> (http://github.com/banzalik)"
+  ],
+  "bugs": {
+    "url": "http://github.com/imgo/imgo/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/imgo/imgo.git"
+  },
+  "directories": {
+    "lib": "./lib"
+  },
+  "bin": {
+    "imgo": "./bin/imgo"
+  },
+  "main": "./lib/imgo.js",
+  "dependencies": {
+    "coa": "~0.3.2",
+    "q": "~0.7.2",
+    "qq": "0.3.3",
+    "q-wrap": "~0.0.1",
+    "inherit": "~1.0.0",
+    "borschik": "~0.0.7"
+  },
+  "devDependencies": {
+    "vows": "~0.6.2"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/vows --spec"
+  },
+  "engines": {
+    "node": ">= 0.4.0 <0.7.0"
+  },
+  "licenses": [
+    {
+      "type": "AS IS"
+    }
+  ],
+  "preferGlobal": true,
+  "publishConfig": {
+    "tag": "unstable"
+  },
+  "optionalDependencies": {}
+}
