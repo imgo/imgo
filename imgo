@@ -16,7 +16,7 @@
 # pngcrush      http://pmt.sourceforge.net/pngcrush/
 
 # версия скрипта
-IMGO_VERSION=0.4
+IMGO_VERSION=0.5
 
 # количество пунктов в массиве 
 arrsize=6
@@ -39,7 +39,8 @@ IMGO_IMG_CUSTOM=0
 # отдаем размер файла
 filesize()
 {
-    filesize=`ls -la "$1" | awk '{print $5}'`
+    filesize=`identify -format %b "$1" | sed '$s/.$//'`
+    #filesize=`ls -la "$1" | awk '{print $5}'`
 }
 
 # отдаем тип файла 
