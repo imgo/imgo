@@ -16,7 +16,7 @@
 # pngcrush      http://pmt.sourceforge.net/pngcrush/
 
 # версия скрипта
-IMGO_VERSION=0.4
+IMGO_VERSION=0.5
 
 # количество пунктов в массиве 
 arrsize=6
@@ -39,7 +39,8 @@ IMGO_IMG_CUSTOM=0
 # отдаем размер файла
 filesize()
 {
-    filesize=`ls -la "$1" | awk '{print $5}'`
+    filesize=`identify -format %b "$1" | sed '$s/.$//'`
+    #filesize=`ls -la "$1" | awk '{print $5}'`
 }
 
 # отдаем тип файла 
@@ -585,7 +586,7 @@ do
        -h|-help|--help)
             echo "imgo ${IMGO_VERSION}: Images Optimizer"
             echo 'Git repo: https://github.com/imgo/imgo'
-			echo 'Usage: imgo [-params] [FILE]'
+            echo 'Usage: imgo [-params] [FILE]'
             echo 'Options:'
             echo '      -h   | --help          displays help'
             echo '      -b   | --brute         brute mode, best compression, incompatible in IE6'
@@ -641,9 +642,9 @@ do
        ;;
        -a)              IMGO_SMALL=1
        ;;
-       -rt)           	IMGO_RT=1
+       -rt)             IMGO_RT=1
        ;;
-       -nr)           	IMGO_NR=1
+       -nr)             IMGO_NR=1
        ;;
        -png8a)          IMGO_PNG8A=1
        ;;
@@ -735,9 +736,9 @@ then
     
     imgologger "empty arguments"
     echo "imgo ${IMGO_VERSION}: Images Optimizer"
-	echo "Usage: imgo [-params] [FILE]"
-	echo "Example: imgo .              optimize all image files starting from current directory"
-	echo "Example: imgo -png -m .      optimize all png images starting from current directory, using multipass mode"
+    echo "Usage: imgo [-params] [FILE]"
+    echo "Example: imgo .              optimize all image files starting from current directory"
+    echo "Example: imgo -png -m .      optimize all png images starting from current directory, using multipass mode"
     echo "imgo --help                  show the extended help"
     exit 0
     
@@ -753,9 +754,9 @@ do
         imgologger "Dir: $x"
         
         FIND_COMMAND="find $x -name '*.png' -or  -name '*.gif' -or -name '*.jpg' -or  -name '*.jpeg' -or  -name '*.ico' -type f"
-		if [ "${IMGO_NR}" = 1 ]; then
-			FIND_COMMAND=${FIND_COMMAND}+" -maxdepth 1"
-		fi
+        if [ "${IMGO_NR}" = 1 ]; then
+            FIND_COMMAND=${FIND_COMMAND}+" -maxdepth 1"
+        fi
         FIND_COMMANDS="$(eval $FIND_COMMAND)"
         imgocore "$FIND_COMMANDS" 
 
