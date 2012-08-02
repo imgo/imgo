@@ -83,13 +83,16 @@ Advanced images optimizer
 * [Устанавливаем](https://github.com/mxcl/homebrew/wiki/Installation "Устанавливаем") homebrew, если уже установлен - переходим дальше
 * Выполняем следующие команды в терминале:
 
-```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/pngout.rb```
+```shell
+brew install exiftool imagemagick optipng libjpeg gifsicle
 
-```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/defluff.rb```
-
-```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/cryopng.rb```
-
-```brew install https://raw.github.com/imgo/imgo-tools/master/Formula/imgo.rb```
+formulas='pngout.rb  defluff.rb cryopng.rb imgo.rb'
+for package in $formulas
+do
+  brew install "https://raw.github.com/imgo/imgo-tools/master/Formula/"$package
+done
+```
+You may need to use `sudo` for brew, depending on your setup.
 
 
 Лицензия
