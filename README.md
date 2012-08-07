@@ -4,6 +4,11 @@ Advanced images optimizer
 
 Оптимизатор изображений
 
+Статья \ Article
+---------------------------
+* Ru: [Как пользоваться Imgo](https://github.com/imgo/imgo/wiki/imgo-ru "Как пользоваться Imgo")
+* En: [Imgo User Gide](https://github.com/imgo/imgo/wiki "Imgo User Gide")
+
 Поддерживаемые форматы
 ---------------------------
 * png
