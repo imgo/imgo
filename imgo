@@ -156,6 +156,7 @@ imgpngcomp()
     upbit "$2"
     # пробуем конвертировать png8 в png24, для безопасного режима - только без прозрачности
     png8topng24 "$2"
+
     for (( i = 0 ; i < "$arrsize" ; i++ ))
     do
         if [ "${imgArray[$i]}" ]; then
@@ -188,8 +189,13 @@ imgpngcomp()
                 getfparam "${imgArray[$i]}" # сжимаем optipng       
                 pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
             fi
+
             cat "${imgArray[$i]}" | defluff  > "${imgArray[$i]}.tmp.png" 2>/dev/null
-            mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
+            if [ `stat -c "%s" ${imgArray[$i].tmp.png}` -eq "0" ]; then
+                echo "Error with defluff"
+            else
+                mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
+            fi
         fi
     done
     minsize
