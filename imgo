@@ -448,7 +448,7 @@ minsize()
     pushd "${RNDFOLDER}" > /dev/null
     SMALLEST=`ls -S | tail -n 1`
     optimg="${RNDFOLDER}${SMALLEST}"
-    filesize "${optimg}" && newsize="${filesize}"
+    filesize "${optimg}" && newsize="0${filesize}"
     popd > /dev/null
     IMGO_TOTAL_ORIG_SIZE="$((${IMGO_TOTAL_ORIG_SIZE}+${originalsize}))"
     IMGO_TOTAL_COUNTER="$((${IMGO_TOTAL_COUNTER}+1))"
