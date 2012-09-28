@@ -454,10 +454,11 @@ minsize()
     SMALLEST=`ls -S | tail -n 1`
     optimg="${RNDFOLDER}${SMALLEST}"
     filesize "${optimg}" && newsize="${filesize}"
+    newsize="$((${newsize}+0))"
     popd > /dev/null
     IMGO_TOTAL_ORIG_SIZE="$((${IMGO_TOTAL_ORIG_SIZE}+${originalsize}))"
     IMGO_TOTAL_COUNTER="$((${IMGO_TOTAL_COUNTER}+1))"
-    if [ ${originalsize} -le "0${newsize}" ]; then
+    if [ ${originalsize} -le ${newsize} ]; then
         if [ -n "${IMGO_QUIET:+x}" ]; then
             tmp=0
         else
