@@ -124,7 +124,7 @@ wget http://static.jonof.id.au/dl/kenutils/pngout-20120530-linux-static.tar.gz -
 cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
 
 # defluff. WARNING! There are i686 and x86_64 binaries only
-wget https://github.com/banzalik/imgo-tools/raw/master/src/defluff/defluff-0.3.2-linux-`uname -m`.zip -O defluff.zip
+wget https://github.com/imgo/imgo-tools/raw/master/src/defluff/defluff-0.3.2-linux-`uname -m`.zip -O defluff.zip
 unzip defluff.zip
 chown a+x defluff
 cp defluff ./bin
