@@ -39,8 +39,9 @@ IMGO_IMG_CUSTOM=0
 # отдаем размер файла
 filesize()
 {
-    filesize=`identify -format %b "$1" | sed '$s/.$//'`
-    #filesize=`ls -la "$1" | awk '{print $5}'`
+    filesize=`wc -c < "$1" | sed 's/\s//g'`
+    #filesize=`identify -format %b "$1" | sed '$s/.$//'`
+    #filesize=`ls -la "$1" | awk '{print $5}'` bug if custom .bashrc
 }
 
 # отдаем тип файла 
@@ -186,16 +187,14 @@ imgpngcomp()
                     pngout -q -c3 -d8 -b1024 -kbKGD "${imgArray[$i]}"
                     pngout -q -c3 -d8 -b4096 -kbKGD "${imgArray[$i]}"
                 fi
-                getfparam "${imgArray[$i]}" # сжимаем optipng       
+                getfparam "${imgArray[$i]}" # сжимаем optipng
                 pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
             fi
 
+            # чистим с помощью defluff
             cat "${imgArray[$i]}" | defluff  > "${imgArray[$i]}.tmp.png" 2>/dev/null
-            if [ `stat -c "%s" ${imgArray[$i].tmp.png}` -eq "0" ]; then
-                echo "Error with defluff"
-            else
-                mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
-            fi
+            [ -s "${imgArray[$i]}.tmp.png" ] && mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}" || echo "Error with defluff"
+            rm -f "${imgArray[$i]}.tmp.png" # need to clenup cuz we sorting by filesize later
         fi
     done
     minsize
@@ -454,11 +453,11 @@ minsize()
     pushd "${RNDFOLDER}" > /dev/null
     SMALLEST=`ls -S | tail -n 1`
     optimg="${RNDFOLDER}${SMALLEST}"
-    filesize "${optimg}" && newsize="0${filesize}"
+    filesize "${optimg}" && newsize="${filesize}"
     popd > /dev/null
     IMGO_TOTAL_ORIG_SIZE="$((${IMGO_TOTAL_ORIG_SIZE}+${originalsize}))"
     IMGO_TOTAL_COUNTER="$((${IMGO_TOTAL_COUNTER}+1))"
-    if [ ${originalsize} -le ${newsize} ]; then
+    if [ ${originalsize} -le "0${newsize}" ]; then
         if [ -n "${IMGO_QUIET:+x}" ]; then
             tmp=0
         else
