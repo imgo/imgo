@@ -791,7 +791,7 @@ else
     if [ "${IMGO_TOTAL_SAVE_SIZE}" = 0 ]; then
         if  [ "$IMGO_SMALL" != "1" ]; then 
             echo "Result:"
-            echo "  Processed:       Сould not compress any of the ${IMGO_TOTAL_COUNTER} files"
+            echo "  Processed:       Could not compress any of the ${IMGO_TOTAL_COUNTER} files"
             echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
         fi
     else
