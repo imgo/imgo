@@ -82,6 +82,7 @@ Advanced images optimizer
 * gifsicle
 * pngnq
 * defluff
+* bc
 
 Установка в MAC OS X
 ---------------------------
