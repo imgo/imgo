@@ -87,7 +87,7 @@ Advanced images optimizer
 Установка в MAC OS X
 ---------------------------
 * [Устанавливаем](https://github.com/mxcl/homebrew/wiki/Installation "Устанавливаем") homebrew, если уже установлен - переходим дальше
-* Если у вас OS X Mountain Lion, тогда установите (http://xquartz.macosforge.org/landing/ "X11")
+* Если у вас OS X Mountain Lion, тогда установите [X11](http://xquartz.macosforge.org/landing/ "X11")
 * Выполняем следующие команды в терминале:
 
 ```shell
