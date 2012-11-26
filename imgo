@@ -40,8 +40,9 @@ IMGO_IMG_CUSTOM=0
 # отдаем размер файла
 filesize()
 {
-    filesize=`identify -format %b "$1" | sed '$s/.$//'`
-    #filesize=`ls -la "$1" | awk '{print $5}'`
+    filesize=`wc -c < "$1" | sed 's/\s//g'`
+    #filesize=`identify -format %b "$1" | sed '$s/.$//'`
+    #filesize=`ls -la "$1" | awk '{print $5}'` bug if custom .bashrc
 }
 
 # отдаем тип файла 
@@ -160,6 +161,7 @@ imgpngcomp()
     upbit "$2"
     # пробуем конвертировать png8 в png24, для безопасного режима - только без прозрачности
     png8topng24 "$2"
+
     for (( i = 0 ; i < "$arrsize" ; i++ ))
     do
         if [ "${imgArray[$i]}" ]; then
@@ -189,11 +191,14 @@ imgpngcomp()
                     pngout -q -c3 -d8 -b1024 -kbKGD "${imgArray[$i]}"
                     pngout -q -c3 -d8 -b4096 -kbKGD "${imgArray[$i]}"
                 fi
-                getfparam "${imgArray[$i]}" # сжимаем optipng       
+                getfparam "${imgArray[$i]}" # сжимаем optipng
                 pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
             fi
+
+            # чистим с помощью defluff
             cat "${imgArray[$i]}" | defluff  > "${imgArray[$i]}.tmp.png" 2>/dev/null
-            mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
+            [ -s "${imgArray[$i]}.tmp.png" ] && mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}" || echo "Error with defluff"
+            rm -f "${imgArray[$i]}.tmp.png" # need to clenup cuz we sorting by filesize later
         fi
     done
     minsize
@@ -453,6 +458,7 @@ minsize()
     SMALLEST=`ls -S | tail -n 1`
     optimg="${RNDFOLDER}${SMALLEST}"
     filesize "${optimg}" && newsize="${filesize}"
+    newsize="$((${newsize}+0))"
     popd > /dev/null
     IMGO_TOTAL_ORIG_SIZE="$((${IMGO_TOTAL_ORIG_SIZE}+${originalsize}))"
     IMGO_TOTAL_COUNTER="$((${IMGO_TOTAL_COUNTER}+1))"
@@ -789,7 +795,7 @@ else
     if [ "${IMGO_TOTAL_SAVE_SIZE}" = 0 ]; then
         if  [ "$IMGO_SMALL" != "1" ]; then 
             echo "Result:"
-            echo "  Processed:       Сould not compress any of the ${IMGO_TOTAL_COUNTER} files"
+            echo "  Processed:       Could not compress any of the ${IMGO_TOTAL_COUNTER} files"
             echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
         fi
     else
