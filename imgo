@@ -17,7 +17,7 @@
 # bc            http://www.gnu.org/software/bc/bc.html
 
 # версия скрипта
-IMGO_VERSION=0.6
+IMGO_VERSION=0.7
 
 # количество пунктов в массиве 
 arrsize=6
