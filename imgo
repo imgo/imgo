@@ -14,10 +14,9 @@
 # defluff       http://encode.ru/threads/1214-defluff-a-deflate-huffman-optimizer
 # cryopng       http://frdx.free.fr/cryopng/
 # pngcrush      http://pmt.sourceforge.net/pngcrush/
-# bc            http://www.gnu.org/software/bc/bc.html
 
 # версия скрипта
-IMGO_VERSION=0.7
+IMGO_VERSION=0.8
 
 # количество пунктов в массиве 
 arrsize=6
@@ -40,8 +39,9 @@ IMGO_IMG_CUSTOM=0
 # отдаем размер файла
 filesize()
 {
-    filesize=`identify -format %b "$1" | sed '$s/.$//'`
-    #filesize=`ls -la "$1" | awk '{print $5}'`
+    #filesize=`wc -c < "$1" | sed 's/\s//g'`
+    filesize=`identify -format %b "$1" | sed 's/[^0-9]*//g'`
+    #filesize=`ls -la "$1" | awk '{print $5}'` bug if custom .bashrc
 }
 
 # отдаем тип файла 
@@ -74,7 +74,6 @@ setbkgd ()
     imgologger "setbkgd start"
     imgologger "bKGD -> ${2}"
      if [ "${IMGO_EMULATE}" = 0 ]; then
-        imgologger "bKGD set fail wrong png format"
         tmp=""
      else
         filetype ${1}
@@ -189,11 +188,14 @@ imgpngcomp()
                     pngout -q -c3 -d8 -b1024 -kbKGD "${imgArray[$i]}"
                     pngout -q -c3 -d8 -b4096 -kbKGD "${imgArray[$i]}"
                 fi
-                getfparam "${imgArray[$i]}" # сжимаем optipng       
+                getfparam "${imgArray[$i]}" # сжимаем optipng
                 pngout -q -s0 -k0 -n2 -f${fparam} -kbKGD "${imgArray[$i]}" # возможно, тут есть смысл использовать брутфорс
             fi
+
+            # чистим с помощью defluff
             cat "${imgArray[$i]}" | defluff  > "${imgArray[$i]}.tmp.png" 2>/dev/null
-            mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}"
+            [ -s "${imgArray[$i]}.tmp.png" ] && mv "${imgArray[$i]}.tmp.png" "${imgArray[$i]}" || echo "Error with defluff"
+            rm -f "${imgArray[$i]}.tmp.png" # need to clenup cuz we sorting by filesize later
         fi
     done
     minsize
