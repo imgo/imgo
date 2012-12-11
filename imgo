@@ -780,8 +780,17 @@ else
     IMGO_PERSENT="$(($IMGO_TOTAL_SAVE_SIZE*100/$IMGO_TOTAL_ORIG_SIZE))"
 fi
 
+
+
 IMGO_DATE_AFTER="$(date +%s)"
 IMGO_DATE_ELAPSED="$(expr $IMGO_DATE_AFTER - $IMGO_DATE_BEFORE)"
+
+# Check `date` version: new versions treat -r swith as a filepath instead of timestamp
+if date -r 1355216909 >/dev/null 2>&1; then
+	IMGO_TOTAL_TIME=$(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S)
+else
+	IMGO_TOTAL_TIME=$(date -u -d @$IMGO_DATE_ELAPSED +%H:%M:%S)
+fi
 
 if [ -n "${IMGO_QUIET:+x}" ]; then
     tmp=0
@@ -790,7 +799,7 @@ else
         if  [ "$IMGO_SMALL" != "1" ]; then 
             echo "Result:"
             echo "  Processed:       Сould not compress any of the ${IMGO_TOTAL_COUNTER} files"
-            echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+            echo "  Total time:     " $IMGO_TOTAL_TIME "(HH:MM:SS)"
         fi
     else
         if  [ "$IMGO_SMALL" != "1" ]; then 
@@ -798,7 +807,7 @@ else
             echo "Result:"
             echo "  Processed:       ${IMGO_TOTAL_COUNTER_PROCESS} files of ${IMGO_TOTAL_COUNTER}, total size ${IMGO_TOTAL_ORIG_SIZE} bytes"
             echo "  Profit:          ${IMGO_TOTAL_SAVE_SIZE} bytes ("$IMGO_PERSENT"%)"
-            echo "  Total time:     " $(date -u -r $IMGO_DATE_ELAPSED +%H:%M:%S) "(HH:MM:SS)"
+            echo "  Total time:     " $IMGO_TOTAL_TIME "(HH:MM:SS)"
         fi
     fi 
 fi
