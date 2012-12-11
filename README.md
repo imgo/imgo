@@ -123,18 +123,19 @@ cd /tmp/imgo-installation
 
 # pngout
 wget http://static.jonof.id.au/dl/kenutils/pngout-20120530-linux-static.tar.gz -O pngout.tar.gz
+tar -xvf pngout.tar.gz
 cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
 
 # defluff. WARNING! There are i686 and x86_64 binaries only
 wget https://github.com/imgo/imgo-tools/raw/master/src/defluff/defluff-0.3.2-linux-`uname -m`.zip -O defluff.zip
 unzip defluff.zip
-chown a+x defluff
+chmod a+x defluff
 cp defluff ./bin
 
 # cryopng
 wget http://frdx.free.fr/cryopng/cryopng-linux-x86.tgz -O cryo.tgz
 tar -zxf cryo.tgz
-cp cryo-files/cryo* ./bin
+cp cryo-files/cryopng ./bin
 
 # pngrewrite. building from sources. binaries only for win
 # Do you really need pngrewrite? http://entropymine.com/jason/pngrewrite/
@@ -142,7 +143,7 @@ mkdir pngrewrite && cd pngrewrite/
 wget http://entropymine.com/jason/pngrewrite/pngrewrite-1.4.0.zip
 unzip pngrewrite-1.4.0.zip
 make
-cp pngrewrite ../bin
+cp pngrewrite ./bin
 cd ..
 
 # imgo script. Yeah! Finally
