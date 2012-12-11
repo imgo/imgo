@@ -7,7 +7,7 @@ Advanced images optimizer
 Статья \ Article
 ---------------------------
 * Ru: [Как пользоваться Imgo](https://github.com/imgo/imgo/wiki/imgo-ru "Как пользоваться Imgo")
-* En: [Imgo User Gide](https://github.com/imgo/imgo/wiki "Imgo User Gide")
+* En: [Imgo User Guide](https://github.com/imgo/imgo/wiki "Imgo User Guide")
 
 Поддерживаемые форматы
 ---------------------------
@@ -101,6 +101,62 @@ done
 ```
 You may need to use `sudo` for brew, depending on your setup.
 
+Установка в Linux Debian
+---------------------------
+
+Часть используемого ПО распространяется только в виде бинарных файлов, в связи с чем есть некоторые трудности с запуском на x86 (не найден defluff).
+
+```sh
+## storing current dir
+pushd . > /dev/null
+
+### Installing needed packages
+sudo apt-get install advancecomp libimage-exiftool-perl imagemagick \
+    optipng libjpeg-progs gifsicle pngnq \
+    tar unzip libpng-dev git
+
+### Installing additional software
+mkdir /tmp/imgo-installation/bin -p
+cd /tmp/imgo-installation
+
+### I reccomend to launch commands above manually! One by one. It could be very-very sad bad because you can catch some errors. Use it at your own risk!
+
+# pngout
+wget http://static.jonof.id.au/dl/kenutils/pngout-20120530-linux-static.tar.gz -O pngout.tar.gz
+cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
+
+# defluff. WARNING! There are i686 and x86_64 binaries only
+wget https://github.com/imgo/imgo-tools/raw/master/src/defluff/defluff-0.3.2-linux-`uname -m`.zip -O defluff.zip
+unzip defluff.zip
+chown a+x defluff
+cp defluff ./bin
+
+# cryopng
+wget http://frdx.free.fr/cryopng/cryopng-linux-x86.tgz -O cryo.tgz
+tar -zxf cryo.tgz
+cp cryo-files/cryo* ./bin
+
+# pngrewrite. building from sources. binaries only for win
+# Do you really need pngrewrite? http://entropymine.com/jason/pngrewrite/
+mkdir pngrewrite && cd pngrewrite/
+wget http://entropymine.com/jason/pngrewrite/pngrewrite-1.4.0.zip
+unzip pngrewrite-1.4.0.zip
+make
+cp pngrewrite ../bin
+cd ..
+
+# imgo script. Yeah! Finally
+git clone git://github.com/imgo/imgo.git
+cp imgo/imgo ./bin
+
+# copy binaries to your local ~/bin or global /usr/local/bin
+# cp ./bin/* ~/bin # or
+sudo cp ./bin/* /usr/local/bin
+
+# dir restore and clean up
+popd > /dev/null
+rm -rf /tmp/imgo-installation
+```
 
 Лицензия
 ---------------------------
