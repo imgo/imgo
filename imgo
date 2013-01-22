@@ -61,7 +61,7 @@ bkgd()
 {
     filetype "$1"
     if [ "${filetype}" = "TrueColorMatte" -o "${filetype}" = "PaletteMatte" ]; then
-        bkgd=`exiftool -BackgroundColor "${1}" | sed -E 's/.*:[[:blank:]]*([[:digit:]]*)[[:blank:]]([[:digit:]]*)[[:blank:]]([[:digit:]]*)/rgb(\1,\2,\3)/'`
+        bkgd=`exiftool -BackgroundColor "${1}" | sed 's/.*:[[:blank:]]*\([[:digit:]]*\)[[:blank:]]\([[:digit:]]*\)[[:blank:]]\([[:digit:]]*\)/rgb(\1,\2,\3)/'`
     else
         bkgd=""
     fi
@@ -326,7 +326,7 @@ getfparam()
             optipng "${1}" &> ${RNDFOLDER}imgogetfparam${RND}.txt
         fi
         
-        fparam=`cat ${RNDFOLDER}imgogetfparam${RND}.txt | tail -n 5 | head -n 1 | sed -E 's/.*f\ =\ ([[:digit:]]*).*/\1/'`
+        fparam=`cat ${RNDFOLDER}imgogetfparam${RND}.txt | tail -n 5 | head -n 1 | sed 's/.*f\ =\ \([[:digit:]]*\).*/\1/'`
 
         rm ${RNDFOLDER}imgogetfparam${RND}.txt
        
