@@ -42,6 +42,7 @@ filesize()
     #filesize=`wc -c < "$1" | sed 's/\s//g'`
     filesize=`identify -format %b "$1" | sed 's/[^0-9]*//g'`
     #filesize=`ls -la "$1" | awk '{print $5}'` bug if custom .bashrc
+    filesize=$((10#$filesize)) # sometimes echo $((000000009)) fails in bash
 }
 
 # отдаем тип файла 
