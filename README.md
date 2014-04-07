@@ -119,40 +119,66 @@ sudo apt-get install advancecomp libimage-exiftool-perl imagemagick \
 mkdir /tmp/imgo-installation/bin -p
 cd /tmp/imgo-installation
 
+# messages - log for warnings
+messages=/tmp/imgo-installation/messages
+
 ### I reccomend to launch commands above manually! One by one. It could be very-very sad bad because you can catch some errors. Use it at your own risk!
 
 # pngout
 wget http://static.jonof.id.au/dl/kenutils/pngout-20120530-linux-static.tar.gz -O pngout.tar.gz
-tar -xvf pngout.tar.gz
-cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
+if [ -e pngout.tar.gz ];
+then
+    tar -xvf pngout.tar.gz
+    cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
+else
+    echo "   * pngout not installed" >> ${messages}
+fi
 
 # defluff. WARNING! There are i686 and x86_64 binaries only
 wget https://github.com/imgo/imgo-tools/raw/master/src/defluff/defluff-0.3.2-linux-`uname -m`.zip -O defluff.zip
-unzip defluff.zip
-chmod a+x defluff
-cp defluff ./bin
+if [ -e defluff.zip ];
+then
+    unzip defluff.zip
+    chmod a+x defluff
+    cp defluff /tmp/imgo-installation/bin
+else
+    echo "   * defluff not installed" >> ${messages}
+fi
 
 # cryopng
 wget http://frdx.free.fr/cryopng/cryopng-linux-x86.tgz -O cryo.tgz
-tar -zxf cryo.tgz
-cp cryo-files/cryopng ./bin
+if [ -e cryo.tgz ];
+then
+    tar -zxf cryo.tgz
+    cp cryo-files/cryopng /tmp/imgo-installation/bin
+else
+    echo "   * cryopng not installed" >> ${messages}
+fi
 
 # pngrewrite. building from sources. binaries only for win
 # Do you really need pngrewrite? http://entropymine.com/jason/pngrewrite/
 mkdir pngrewrite && cd pngrewrite/
-wget http://entropymine.com/jason/pngrewrite/pngrewrite-1.4.0.zip
-unzip pngrewrite-1.4.0.zip
-make
-cp pngrewrite ./bin
+wget http://entropymine.com/jason/pngrewrite/pngrewrite-1.4.0.zip -O pngrewrite.zip
+if [ -e pngrewrite.zip ];
+then
+    unzip pngrewrite.zip
+    make
+    cp ./pngrewrite /tmp/imgo-installation/bin
+else
+    echo "   * pngrewrite not installed" >> ${messages}
+fi
 cd ..
 
 # imgo script. Yeah! Finally
 git clone git://github.com/imgo/imgo.git
-cp imgo/imgo ./bin
+cp imgo/imgo /tmp/imgo-installation/bin/
 
 # copy binaries to your local ~/bin or global /usr/local/bin
-# cp ./bin/* ~/bin # or
-sudo cp ./bin/* /usr/local/bin
+# mkdir -p ~/bin && cp /tmp/imgo-installation/bin/* ~/bin # or
+sudo cp /tmp/imgo-installation/bin/* /usr/local/bin/
+
+# show warnings summary after install complete
+if [ -s "${messages}" ]; then cat ${messages}; fi
 
 # dir restore and clean up
 popd > /dev/null
