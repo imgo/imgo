@@ -607,7 +607,7 @@ do
             echo '      -ico                   optimize only ICO files'
             echo '      -a                     abbreviated information'
             echo '      -e   | --emulate       emulation mode - files are not overwritten'
-            echo '      -m   | --multipass     multipass- image is processed several times'
+            echo '      -m   | --multipass     multipass - image is processed several times'
             echo '      -q   | --quiet         hides the whole bar, be quiet'
             echo '      -V   | --version       displays version number'
             echo '      -d   | --diff          displays diff info'
