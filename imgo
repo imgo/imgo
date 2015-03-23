@@ -699,7 +699,8 @@ imgdetectcompres()
 #обработчик картинок
 imgocore ()
 {
-    FILST=$@
+    IFS=$'\n' 
+    FILST=$*
     for x in $FILST
     do
         
