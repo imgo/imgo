@@ -125,11 +125,11 @@ messages=/tmp/imgo-installation/messages
 ### I reccomend to launch commands above manually! One by one. It could be very-very sad bad because you can catch some errors. Use it at your own risk!
 
 # pngout
-wget http://static.jonof.id.au/dl/kenutils/pngout-20120530-linux-static.tar.gz -O pngout.tar.gz
+wget http://static.jonof.id.au/dl/kenutils/pngout-20150319-linux-static.tar.gz -O pngout.tar.gz
 if [ -e pngout.tar.gz ];
 then
     tar -xvf pngout.tar.gz
-    cp pngout-20120530-linux-static/`uname -m`/pngout-static ./bin/pngout
+    cp pngout-20150319-linux-static/`uname -m`/pngout-static ./bin/pngout
 else
     echo "   * pngout not installed" >> ${messages}
 fi
