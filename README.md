@@ -122,7 +122,7 @@ cd /tmp/imgo-installation
 # messages - log for warnings
 messages=/tmp/imgo-installation/messages
 
-### I reccomend to launch commands above manually! One by one. It could be very-very sad bad because you can catch some errors. Use it at your own risk!
+### I recommend to launch commands above manually! One by one. It could be very-very sad bad because you can catch some errors. Use it at your own risk!
 
 # pngout
 wget http://static.jonof.id.au/dl/kenutils/pngout-20150319-linux-static.tar.gz -O pngout.tar.gz
