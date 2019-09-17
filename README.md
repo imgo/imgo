@@ -113,7 +113,7 @@ pushd . > /dev/null
 ### Installing needed packages
 sudo apt-get install advancecomp libimage-exiftool-perl imagemagick \
     optipng libjpeg-progs gifsicle pngnq \
-    tar unzip libpng-dev git
+    tar unzip libpng-dev git make gcc
 
 ### Installing additional software
 mkdir /tmp/imgo-installation/bin -p
