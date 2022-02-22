@@ -91,13 +91,17 @@ Advanced images optimizer
 * Выполняем следующие команды в терминале:
 
 ```shell
-brew install exiftool imagemagick optipng libjpeg gifsicle
+brew install exiftool imagemagick optipng libjpeg gifsicle jonof/kenutils/pngout
 
-formulas='pngrewrite.rb pngout.rb  defluff.rb cryopng.rb imgo.rb'
+formulas='pngrewrite.rb defluff.rb cryopng.rb imgo.rb'
+
+imgodir=$(mktemp -d -t 'imgo.XXX')
 for package in $formulas
 do
-  brew install "https://raw.github.com/imgo/imgo-tools/master/Formula/"$package
+  wget "https://raw.github.com/imgo/imgo-tools/master/Formula/"$package -O $imgodir/$package
+  brew install --HEAD -s $imgodir/$package
 done
+rm -Rf $imgodir
 ```
 You may need to use `sudo` for brew, depending on your setup.
 
